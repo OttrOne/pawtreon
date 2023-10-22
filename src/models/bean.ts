@@ -17,10 +17,10 @@ const beanSchema: Schema = new Schema({
 
 export const Bean = model<IBean>('bean', beanSchema);
 
-const extract_discord_id = (included: Array<any>) : Map<string,string | undefined> => {
+const extract_discord_id = (included: Array<any>): Map<string, string | undefined> => {
 
     const discord_ids = new Map<string, string | undefined>();
-    const edid = (attr: any) : string | undefined => {
+    const edid = (attr: any): string | undefined => {
 
         if (!attr['social_connections']) return;
         if (!attr['social_connections']['discord']) return;
@@ -35,7 +35,7 @@ const extract_discord_id = (included: Array<any>) : Map<string,string | undefine
     return discord_ids;
 }
 
-const extract_emails = (data: Array<any>) : Map<string, string | undefined> => {
+const extract_emails = (data: Array<any>): Map<string, string | undefined> => {
 
     const emails = new Map<string, string | undefined>();
 
@@ -46,20 +46,20 @@ const extract_emails = (data: Array<any>) : Map<string, string | undefined> => {
 
         const key = entry['relationships']['user']['data']['id'];
 
-        emails.set(key,entry['attributes']['email'])
+        emails.set(key, entry['attributes']['email'])
     }
     return emails;
 };
 
-const extract_user_data = (data: Array<any>) : Map<string, string | undefined> => {
+const extract_user_data = (data: Array<any>): Map<string, string | undefined> => {
 
     const user_data = new Map<string, string | undefined>();
 
-    const et = (cet: any) : string | undefined => {
+    const et = (cet: any): string | undefined => {
 
-        if(!cet) return;
+        if (!cet) return;
 
-        for(const tier of cet['data']) {
+        for (const tier of cet['data']) {
 
             if (tier['type'] !== 'tier') return;
             return tier['id'];
@@ -74,7 +74,7 @@ const extract_user_data = (data: Array<any>) : Map<string, string | undefined> =
 
         const key = entry['relationships']['user']['data']['id'];
 
-        user_data.set(key,et(entry['relationships']['currently_entitled_tiers']))
+        user_data.set(key, et(entry['relationships']['currently_entitled_tiers']))
     }
     return user_data;
 };
@@ -85,8 +85,8 @@ export const fetchBeans = async () => {
 
     const res = await axios.get(`https://www.patreon.com/api/oauth2/v2/campaigns/${process.env.CAMPAIGN}/members?include=currently_entitled_tiers,user&fields%5Bmember%5D=patron_status,email&fields%5Buser%5D=social_connections&page%5Bsize%5D=800`, {
         headers: {
-            'Authorization' : `Bearer ${process.env.TOKEN}`,
-            'Content-Type' : 'application/json',
+            'Authorization': `Bearer ${process.env.TOKEN}`,
+            'Content-Type': 'application/json',
         },
     });
     const users = extract_user_data(res.data['data']);

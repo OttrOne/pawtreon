@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Agent } from 'https';
 import { fetchBeans } from './bean';
 
 interface IFederator {
@@ -22,9 +23,9 @@ const remoteAdd = async (boi: IFederator) => {
             "patreon_tier_id": boi.patreon_tier_id
 
         }, {
-            headers: {
-                'Authorization' : `Token ${API_TOKEN}`,
-                'Content-Type' : 'application/json',
+        headers: {
+            'Authorization': `Token ${API_TOKEN}`,
+            'Content-Type': 'application/json',
         },
     });
 
@@ -34,30 +35,30 @@ const remoteAdd = async (boi: IFederator) => {
 const remoteDelete = async (boi: IFederator) => {
 
     const remboi = await axios.delete(`${API_ENDPOINT_URL}`,
-    {
-        data : {
-            "patreon_id": boi.patreon_id,
-        },
-        headers: {
-                'Authorization' : `Token ${API_TOKEN}`,
-                'Content-Type' : 'application/json',
-        },
-    });
+        {
+            data: {
+                "patreon_id": boi.patreon_id,
+            },
+            headers: {
+                'Authorization': `Token ${API_TOKEN}`,
+                'Content-Type': 'application/json',
+            },
+        });
     return true;
 }
 const remoteUpdate = async (boi: IFederator) => {
 
     const updboi = await axios.patch(`${API_ENDPOINT_URL}`,
-    {
-        "patreon_id": boi.patreon_id,
-        "patreon_tier_id": boi.patreon_tier_id
-    },
-    {
-        headers: {
-                'Authorization' : `Token ${API_TOKEN}`,
-                'Content-Type' : 'application/json',
+        {
+            "patreon_id": boi.patreon_id,
+            "patreon_tier_id": boi.patreon_tier_id
         },
-    });
+        {
+            headers: {
+                'Authorization': `Token ${API_TOKEN}`,
+                'Content-Type': 'application/json',
+            },
+        });
 }
 
 const time = () => {
@@ -67,22 +68,29 @@ const time = () => {
 export const update = async () => {
 
     console.log(`[${time()}] Read from remote API`)
+    var agent = new Agent({ family: 4 });
     const users = await axios.get(`${API_ENDPOINT_URL}`, {
+        httpsAgent: agent,
         headers: {
-            'Authorization' : `Token ${API_TOKEN}`,
-            'Content-Type' : 'application/json',
+            'Authorization': `Token ${API_TOKEN}`,
+            'Content-Type': 'application/json',
         },
     });
-
+    console.log("user on awtterspace:", users.data.length)
     const beans = await fetchBeans();
-
+    console.log("user on patreon:", beans.size);
     for (const user of users.data) {
 
         const bean = beans.get(user.patreon_id);
+
         if (!bean || !bean.tier) {
-            await remoteDelete(user)
+            if (user.patreon_tier_id !== null) {
+                console.log("delete", user.patreon_id, user.patreon_tier_id)
+                await remoteDelete(user)
+            }
         }
         else if (bean.tier !== user.patreon_tier_id) {
+            console.log("update", bean.tier, user.patreon_tier_id)
             await remoteUpdate({
                 patreon_id: bean.patreon_id,
                 patreon_tier_id: bean.tier
